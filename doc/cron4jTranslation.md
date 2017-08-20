@@ -10,17 +10,19 @@
 7. Daemon threads 守护线程 （其实daemon本意就有守护进程的意思 加个threads应该是强调线程而非进程）
 8. Predictor 先知（故意翻译为这个中二的名字哈哈）、预报器（这才是常规翻译）
 9. Crontab/Cron 定时任务工具
+10. status tracking 状态跟踪
+11. executor 执行者
 - - -
 <span id="index"></span>
-## Index
-> 1. [快速开始](#1)
-> 1. [调度模式 scheduling pattern](#2)
-> 1. [如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务](#3)
-> 1. [如何调度系统程序](#4)
-> 1. [如何从文件中调度程序](#5)
-> 1. [建立你的任务 Task](#6)
-> 1. [建立你的收集器 Collector](#7)
-> 1. [建立你的调度器的监听器](#8)
+## Index（git页面中的锚点索引好像用不了 手动滚页面吧）
+> 1. [快速开始](#1快速开始)
+> 1. [调度模式 scheduling pattern](#2调度模式-scheduling-pattern)
+> 1. [如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务](#3如何调度-schedule重新调度-reschedule脱离调度-deschedule一个任务Task)
+> 1. [如何调度系统程序](#4如何调度系统程序)
+> 1. [如何从调度配置文件中调度程序](#5如何从调度配置文件中调度程序)
+> 1. [创建你的任务 Task](#6创建你的任务-Task)
+> 1. [创建你的收集器 Collector](#7)
+> 1. [创建你的调度器的监听器](#8)
 > 1. [执行者Executors](#9)
 > 1. [手动启动任务](#10)
 > 1. [在指定时区下运行](#11)
@@ -29,7 +31,7 @@
 > 1. [Cron解析器](#14)
 
 - - -
-<span id="1"></span>
+<span id="1快速开始"></span>
 ### 1、快速开始：
 cron4j的主要实体是‘scheduler’，实例化`it.sauronsoftware.cron4j.Scheduler`之后，你可以在一年当中任意的时间段执行任意的任务（Task）。
 
@@ -88,8 +90,8 @@ public class Quickstart {
 
 [回到索引](#index)
 - - -
-<span id="2"></span>
-### 2、调度模式
+<span id="2调度模式-scheduling-pattern"></span>
+### 2、调度模式 scheduling pattern
 'scheduling pattern'是一个 UNIX 的类定时任务模式，由一个以空格分隔为五个部分的字符串组成。每个部分代表着：
 
 分钟子模式（Minutes sub-pattern）：
@@ -167,20 +169,20 @@ cron4j允许你使用“|”符号连接多个调度模式组成一个调度模�
 
 [回到索引](#index)
 - - -
-<span id="3"></span>
-### 3、如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务
+<span id="3如何调度-schedule重新调度-reschedule脱离调度-deschedule一个任务Task"></span>
+### 3、如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务（Task）
 
 ##### （1）调度
 创建Task的最简单最常用的方法就是实现`java.lang.Runnable`接口，任务创建好的时候，它可以被`it.sauronsoftware.cron4j.Scheduler.schedule(String, Runnable)`方法安排进调度器中，如果调度模式有格式异常，将会抛出`it.sauronsoftware.cron4j.InvalidPatternException`异常。
 
-创建Task的另一种方法就是继承抽象方法`it.sauronsoftware.cron4j.Task`，这种方式比上一种方式更加强大，它可以使开发者访问一些cron4j提供的特性。你可以在“[建立你的任务 Task](#6)”章节中了解到更多相关用法。Task的实例可以被`schedule(String, Task)`方法和`schedule(SchedulingPattern, Task)`方法安排进调度器中。
+创建Task的另一种方法就是继承抽象方法`it.sauronsoftware.cron4j.Task`，这种方式比上一种方式更加强大，它可以使开发者访问一些cron4j提供的特性。你可以在“[建立你的任务 Task](#6)”小节中了解到更多相关用法。Task的实例可以被`schedule(String, Task)`方法和`schedule(SchedulingPattern, Task)`方法安排进调度器中。
 
 ##### （2）重新调度/脱离调度
 在调度器对象的调度方法`schedule`会返回一个ID值（String类型）用来识别和检索已经安排过的操作。
 
 这个ID可以被用来之后做：
 * 重新调度该任务（需要改变它的调度模式）
-* 把某个任务脱离调度（把任务从调度器中移除）
+* 把该任务脱离调度（把任务从调度器中移除）
 
 可以使用这两个方法取重新调度该任务：
 * `reschedule(String, String)`
@@ -191,7 +193,7 @@ cron4j允许你使用“|”符号连接多个调度模式组成一个调度模�
 
 [回到索引](#index)
 - - -
-<span id="4"></span>
+<span id="4如何调度系统程序"></span>
 ### 4、如何调度系统程序
 * 使用类`ProcessTask`可以很简单的完成系统程序的调度
 ```
@@ -244,5 +246,53 @@ task.setStdinFile(new File("in.txt"));
 
 [回到索引](#index)
 - - -
-<span id="5"></span>
-### 5、如何从文件中调度程序
+<span id="5如何从调度配置文件中调度程序"></span>
+### 5、如何从调度配置文件中调度程序
+cron4j调度器可以从调度配置文件中调度一系列的程序流程
+
+你需要准备一个调度配置文件，这和UNIX中crontab的用法非常相似，并且把文件通过`scheduleFile(File)`方法注册到调度器里面。
+
+调度配置文件也可以通过`deschedule(File)`方法来脱离调度。
+
+已经调度过的调度配置文件可以使用`getScheduledFiles()`方法来检索到。
+
+已经注册过的调度配置文件会每分钟都被解析一次，调度器会根据调度配置文件去运行当前系统下所有匹配的、使用‘scheduling pattern（调度模式）’来正确声明的程序。
+
+cron4j的调度配置文件的声明规则可以从“[Cron解析器](#14)”小节中了解到。
+
+[回到索引](#index)
+- - -
+<span id="6创建你的任务-Task"></span>
+### 6、创建你的任务 Task
+
+一个`java.lang.Runnable`对象是一个简单的Task，但是为了获得对整个任务的控制权你还需要继承`it.sauronsoftware,cron4j.Task`类（注意这是一个抽象类）。
+
+比较简单的形式是：
+（1）实现Runnable接口的时候：任务就是run方法所执行的语句。
+（2）继承Task抽象类的时候：任务就是需要实现的`execute(TaskExecutionContext)`方法所执行的语句。
+
+execute(TaskExecutionContext)方法提供了一个`it.sauronsoftware.cron4j.TaskExecutionContext`实例对象，这是在run方法中所没有的。
+
+你可以用这个对象做这些事情来操作当前任务：
+
+* status tracking 状态跟踪
+> 任务可以和它的执行者进行通信，可以通过文本描述来向外通知它的internal state（内部状态）
+>
+> 如果你对在任务中支持状态跟踪这个功能比较感兴趣的话，你可以重载`supportsStatusTracking()`方法，这个方法需要一个true为返回值。
+>
+> 当你重载过这个方法之后，在`execute(TaskExecutionContext)`方法里面就可以调用`context.setStatusMessage(String)`方法，这会给该任务的执行者发一条状态消息。这个状态消息，通过执行者，可以被外部用户索引到（具体看“[执行者Executors](#9)”小节）。
+>
+
+* completeness tracking 完成度跟踪
+> 任务可以和它的执行者进行通信，可以通过数字值来向外通知它的completeness level（完成度），
+>
+> 如果你对在任务中支持完成度跟踪这个功能比较感兴趣的话，你可以重载`supportsCompletenessTracking()`方法，这个方法需要一个true为返回值。
+>
+> 当你重载过这个方法之后，在`execute(TaskExecutionContext)`方法里面就可以调用`context.setCompleteness(double)`方法，这个方法需要传递一个0~1之间的double值，这会给该任务的执行者发一个完成度值。这个完成度值，通过执行者，可以被外部用户索引到（具体看“[执行者Executors](#9)”小节）。
+
+* paused 被暂停
+> 任务可以被随意的暂停。
+>
+> 如果你对可以在任务中支持暂停和恢复任务的功能比较感兴趣的话，你可以重写`canBePaused()`方法，这个方法需要一个true作为返回值。
+>
+> 当你重载过这个方法之后，你需要定期的调用`context.pauseIfRequested()`方法，这会暂停任务的执行，直到被外部用户恢复或者终止当前任务。
