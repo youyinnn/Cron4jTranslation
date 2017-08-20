@@ -16,8 +16,8 @@
 > 1. [快速开始](#1)
 > 1. [调度模式 scheduling pattern](#2)
 > 1. [如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务](#3)
-> 1. [如何调度系统进程](#4)
-> 1. [如何从文件配置中调度任务](#5)
+> 1. [如何调度系统程序](#4)
+> 1. [如何从文件中调度程序](#5)
 > 1. [建立你的任务 Task](#6)
 > 1. [建立你的收集器 Collector](#7)
 > 1. [建立你的调度器的监听器](#8)
@@ -134,10 +134,13 @@ public class Quickstart {
 > 和上面的结果一样
 
 斜杠也可以运用到子模式当中，用来识别子模式取值范围内的分步值。
+
 它有两种运用方式：
 * */c
 * a-b/c
+
 第一种会匹配到子模式范围0到最大值中的每个c增值 包含0值
+
 第二种会匹配到范围a到b中的每个c增值 包含a值
 
 > \*/5 * * * *
@@ -189,3 +192,57 @@ cron4j允许你使用“|”符号连接多个调度模式组成一个调度模�
 [回到索引](#index)
 - - -
 <span id="4"></span>
+### 4、如何调度系统程序
+* 使用类`ProcessTask`可以很简单的完成系统程序的调度
+```
+ProcessTask task = new ProcessTask("C:\\Windows\\System32\\notepad.exe");
+Scheduler scheduler = new Scheduler();
+scheduler.schedule("* * * * *", task);
+scheduler.start();
+// ...
+```
+* 多个程序参数可以作为字符串数组去代替一条参数
+```
+String[] command = { "C:\\Windows\\System32\\notepad.exe", "C:\\File.txt" };
+ProcessTask task = new ProcessTask(command);
+// ...
+```
+* 程序的环境变量可以作为第二组字符串数组参数传入，其中的对象必须是‘NAME=VALUE’的形式
+```
+String[] command = { "C:\\tomcat\\bin\\catalina.bat", "start" };
+String[] envs = { "CATALINA_HOME=C:\\tomcat", "JAVA_HOME=C:\\jdks\\jdk5" };
+ProcessTask task = new ProcessTask(command, envs);
+// ...
+```
+* 默认工作目录可以通过传入第三组参数去改变
+```
+String[] command = { "C:\\tomcat\\bin\\catalina.bat", "start" };
+String[] envs = { "CATALINA_HOME=C:\\tomcat", "JAVA_HOME=C:\\jdks\\jdk5" };
+File directory = "C:\\MyDirectory";
+ProcessTask task = new ProcessTask(command, envs, directory);
+// ...
+```
+* 如果你只想改变工作目录而不想使用环境变量，你可以在envs位置传入null值
+```
+ProcessTask task = new ProcessTask(command, null, directory);
+```
+当evns为null的时候，程序会继承当前JVM环境下工作的所有环境变量。
+
+环境变量和工作目录也可以通过调用`setEnvs(String[])`和`setDirectory(java.io,File)`方法来设置
+
+程序的标准输出和标准错误输出管道可以通过`setStdoutFile(java.io.File)`和`setStderrFile(java.io.File)`方法重定向到指定文件
+```
+ProcessTask task = new ProcessTask(command, envs, directory);
+task.setStdoutFile(new File("out.txt"));
+task.setStderrFile(new File("err.txt"));
+```
+同样的标准输入管道可以从已存在的文件中读取，通过使用方法`setStdinFile(java.io.File)`
+```
+ProcessTask task = new ProcessTask(command, envs, directory);
+task.setStdinFile(new File("in.txt"));
+```
+
+[回到索引](#index)
+- - -
+<span id="5"></span>
+### 5、如何从文件中调度程序
