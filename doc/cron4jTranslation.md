@@ -14,13 +14,13 @@
 11. executor 执行者
 - - -
 <span id="index"></span>
-## Index（git页面中的锚点索引好像用不了 手动滚页面吧）
+## Index
 > 1. [快速开始](#1快速开始)
 > 1. [调度模式 scheduling pattern](#2调度模式-scheduling-pattern)
-> 1. [如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务](#3如何调度-schedule重新调度-reschedule脱离调度-deschedule一个任务Task)
+> 1. [如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务](#3如何调度-schedule重新调度-reschedule脱离调度-deschedule一个任务task)
 > 1. [如何调度系统程序](#4如何调度系统程序)
 > 1. [如何从调度配置文件中调度程序](#5如何从调度配置文件中调度程序)
-> 1. [创建你的任务 Task](#6创建你的任务-Task)
+> 1. [创建你的任务 Task](#6创建你的任务-task)
 > 1. [创建你的收集器 Collector](#7)
 > 1. [创建你的调度器的监听器](#8)
 > 1. [执行者Executors](#9)
@@ -169,7 +169,7 @@ cron4j允许你使用“|”符号连接多个调度模式组成一个调度模�
 
 [回到索引](#index)
 - - -
-<span id="3如何调度-schedule重新调度-reschedule脱离调度-deschedule一个任务Task"></span>
+<span id="3如何调度-schedule重新调度-reschedule脱离调度-deschedule一个任务task"></span>
 ### 3、如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务（Task）
 
 ##### （1）调度
@@ -262,7 +262,7 @@ cron4j的调度配置文件的声明规则可以从“[Cron解析器](#14)”小
 
 [回到索引](#index)
 - - -
-<span id="6创建你的任务-Task"></span>
+<span id="6创建你的任务-task"></span>
 ### 6、创建你的任务 Task
 
 一个`java.lang.Runnable`对象是一个简单的Task，但是为了获得对整个任务的控制权你还需要继承`it.sauronsoftware,cron4j.Task`类（注意这是一个抽象类）。
