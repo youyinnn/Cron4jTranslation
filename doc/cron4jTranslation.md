@@ -9,7 +9,7 @@
 6. deschedule 脱离调度、安排
 7. Daemon threads 守护线程 （其实daemon本意就有守护进程的意思 加个threads应该是强调线程而非进程）
 8. Predictor 先知（故意翻译为这个中二的名字哈哈）、预报器（这才是常规翻译）
-9. Crontab 定时任务
+9. Crontab/Cron 定时任务工具
 - - -
 <span id="index"></span>
 ## Index
