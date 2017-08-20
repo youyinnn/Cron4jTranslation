@@ -1,5 +1,4 @@
 # Cron4j : A pure Java cron-like scheduler
-- - -
 创立时间：2017年8月20日13:35:01
 
 官方文档地址：http://www.sauronsoftware.it/projects/cron4j/
@@ -78,5 +77,7 @@ Make a donation
 
 翻译进度：
 > 第一阶段
+>
 > 时间：2017年8月20日21:03:12
+>
 > 内容：Overview、doc的前三节
