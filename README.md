@@ -1,6 +1,7 @@
 # Cron4j : A pure Java cron-like scheduler
 - - -
 创立时间：2017年8月20日13:35:01
+
 官方文档地址：http://www.sauronsoftware.it/projects/cron4j/
 - - -
 Maven依赖：
@@ -54,6 +55,7 @@ cron4j是Java平台的一个调度器（也就是任务调度工具/框架），
 把cron4j使用到你的项目里面其实非常简单，你只需要掌握一些常用API就足够了。启动定时任务的启动规则必须是一个字符串表达式，它被称为**scheduling pattern（调度模式）**，它的语法等同于UNIX系统中crontab所使用的语法一样。如果你了解过UNIX中crontab的操作，那么恭喜你，你已经掌握本工具的一大半了。如果你不会，don't worry：crontab的调度模式你只需要花上几分钟就能掌握（骗人！），再说了，后面还有documentation给你学习呢。
 - - -
 运行要求：
+
 你可以在任何Java平台使用它。
 
 License:
@@ -62,7 +64,9 @@ cron4j is Free Software and it is licensed under LGPL (you will find a copy of t
 ```
 
 Feedback
+
 ...
 
 Make a donation
+
 ...
