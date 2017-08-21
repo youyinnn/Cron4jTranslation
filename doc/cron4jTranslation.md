@@ -280,7 +280,7 @@ cron4j的调度配置文件的声明规则可以从“[Cron解析器](#14)”小
 
 一个`java.lang.Runnable`对象是一个简单的Task，但是为了获得对整个任务的控制权你还需要继承`it.sauronsoftware,cron4j.Task`类（注意这是一个抽象类）。
 
-比较简单的形式是：
+有两种比较简单的创建形式：
 （1）实现Runnable接口的时候：任务就是run方法所执行的语句。
 （2）继承Task抽象类的时候：任务就是需要实现的`execute(TaskExecutionContext)`方法所执行的语句。
 
@@ -325,7 +325,7 @@ execute(TaskExecutionContext)方法提供了一个`it.sauronsoftware.cron4j.Task
 
 一个自定义的任务可以被任务收集器（task collector）所立即调度、运行、或者返回。
 
-*译者文外补充：可以查看Task类的源码，不难发现，上述所要重载的方法在源码中也仅仅只是返回false值，也即默认是关闭这些功能的，我们只有重载为true才能开启和使用它们。*
+> *译者文外补充：可以查看Task类的源码，不难发现，上述所要重载的方法在源码中也仅仅只是返回false值，也即默认是关闭这些功能的，我们只有重载为true才能开启和使用它们。*
 
 [回到索引](#index)
 - - -
@@ -340,13 +340,98 @@ cron4j调度器支持注册一个或多个`it.sauronsoftware.cron4j.TaskCollecto
 
 收集器可以在任意的时间被添加（注册）、查询（索引）、移除，即使是在调度器正在运行的状态下也可以。
 
-每一个被注册过的收集器每分钟都会被调度器去索引一次，调度器会调用收集器的`collector.getTasks()`方法。这个实现方法会返回一个`it.sauronsoftware,cron4j.TaskTable`实例。
+每一个被注册过的收集器每隔一分钟都会被调度器去索引一次，调度器会调用收集器的`collector.getTasks()`方法。这个实现方法会返回一个`it.sauronsoftware,cron4j.TaskTable`实例，我们把这个实例称为任务表。
 
 每一个任务表都包含了本收集器中所有的任务实例和该任务对应的调度模式实例。一旦该表被检索到，调度器就会检查被记录（原文使用reported）到的对象，然后执行所有使用‘scheduling pattern（调度模式）’来正确声明的、匹配当前系统时间的任务。
 
 一个自定义的收集器可以配合外部任务源来约束调度器的行为，比如数据库、或者xml文件，这些同样支持在运行时更改和管理的源。
 
+> *译者文外补充：在[下面](#1collector-exp)贴出译者实践演示代码，代码中演示了如何向一个调度器中注册、移除收集器，并且查看收集器的信息，同时在代码运行的过程中也演示了调度器每分钟索引收集器task的过程。*
+>
+>*读者可以自行研究代码，花上4分钟体会一下。读者也可以从`TaskController`类的源码开始阅读下去，特别是`TaskTable`类中，仅仅只有几个简单易懂的API，了解过后你会发现这套流程其实并不难走通。*
+
 [回到索引](#index)
 - - -
 <span id="8创建自定义的监听器来监控你的调度器"></span>
 ### 8、创建自定义的监听器来监控你的调度器
+
+
+
+- - -
+# 部分实践演示代码
+<span id="1collector-exp"></span>
+### 1、Collector exp
+```
+public class TestCron4j {
+
+    public static void main(String[] args) {
+        Scheduler scheduler = new Scheduler();
+
+        TaskCollector c1 = new TaskCollector() {
+            @Override
+            public TaskTable getTasks() {
+                System.out.println("过了一分钟 调度器又来索引我啦");
+                TaskTable taskTable = new TaskTable();
+                taskTable.add(new SchedulingPattern("* * * * *"), new TaskOne());
+                taskTable.add(new SchedulingPattern("*/2 * * * *"), new TaskTwo());
+                return taskTable;
+            }
+        };
+
+        TaskCollector c2 = () ->{
+            System.out.println("过了一分钟 调度器又来索引我啦");
+            TaskTable taskTable = new TaskTable();
+            taskTable.add(new SchedulingPattern("* * * * *"), new TaskThree());
+            taskTable.add(new SchedulingPattern("*/2 * * * *"), new TaskFour());
+            return taskTable;
+        };
+
+        scheduler.addTaskCollector(c1);
+        scheduler.addTaskCollector(c2);
+
+        showController(scheduler);
+
+        scheduler.start();
+
+        try {
+            Thread.sleep(2000L * 60L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("两分钟到 移除c1");
+        scheduler.removeTaskCollector(c1);
+        showController(scheduler);
+
+    }
+
+    static void showController(Scheduler scheduler){
+        TaskCollector[] taskCollectors = scheduler.getTaskCollectors();
+        System.out.println("|----当前调度器中有"+taskCollectors.length+"个收集器");
+        for (int i = 0 ; i < taskCollectors.length ; ++i){
+            System.out.println("|----|----当前显示第"+(i+1)+"个收集器的信息");
+            TaskCollector now = taskCollectors[i];
+            TaskTable tasks = now.getTasks();
+            System.out.println("|----|----|----当前收集器有"+tasks.size()+"个任务");
+            for (int j = 0 ; j < tasks.size() ; ++j){
+                System.out.println("|----|----|----|----当前显示第"+(j+1)+"个任务信息");
+                System.out.println("|----|----|----|----Task:["+tasks.getTask(j)+"] and scp:["+tasks.getSchedulingPattern(j)+"]");
+            }
+        }
+    }
+
+}
+
+class TaskOne extends Task{
+    @Override
+    public void execute(TaskExecutionContext taskExecutionContext) throws RuntimeException {
+        LocalTime now = LocalTime.now();
+        System.out.println("This is Task one ! [ " + now.getHour() + " : " + now.getMinute() + " ]");
+
+    }
+}
+
+//Task二三四...
+```
+[返回Collector小节](#7创建自定义的收集器-Collector)
+- - -
