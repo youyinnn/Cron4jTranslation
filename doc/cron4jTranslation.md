@@ -26,10 +26,10 @@
 > 1. [创建自定义的监听器来监控你的调度器](#8创建自定义的监听器来监控你的调度器)
 > 1. [执行器 Executors](#9执行器-executors)
 > 1. [手动启动任务](#10手动启动任务)
-> 1. [在指定时区下运行](#11)
-> 1. [守护线程 Daemon threads](#12)
-> 1. [预报器 Predictor](#13)
-> 1. [Cron解析器](#14)
+> 1. [在指定时区下运行](#11在指定时区下运行)
+> 1. [守护线程 Daemon threads](#12守护线程-daemon-threads)
+> 1. [预报器 Predictor](#13预报器-predictor)
+> 1. [Cron解析器](#14cron解析器)
 
 - - -
 <span id="1快速开始"></span>
@@ -471,15 +471,148 @@ taskFailed(TaskExecutor, Throwable)
 - - -
 <span id="10手动启动任务"></span>
 ### 10、手动启动任务
+如果调度器以及开启并且处于运行中，你是有可能手动启动一个任务的，你甚至可以不用安排调度模式。
 
+你可以使用`Scheduler.launch(Task)`方法，任务就会立马被执行，这个方法会返回该任务的TaskExecutor（执行器）实例，你可以使用它来控制整个任务的执行过程。
 
-
-
-
-
-
-
+[回到索引](#index)
 - - -
+<span id="11在指定时区下运行"></span>
+### 11、在指定时区下运行
+在默认的情况下，调度器会在系统默认的时区中运行。换句话说，一个“ 0 2 * * * ”的调度模式会根据系统时区在当地时间每天的2（am）时执行任务。
+
+你可以为调度器设置不同于系统默认时区的时区作为它的工作时区。
+
+调用`Scheduler.setTimeZone(TimeZone)`方法和`Scheduler.getTimeZone()`方法就可以控制这个属性。
+
+一旦调度器的默认时区被改变，系统当前运行时会在解释调度模式的时候去区适应你所提供的时区。那么结果会在你指定的时区中按照你指定的调度模式去执行任务。假设有以下的情况：
+
+系统时间：10：00
+系统时区：GMT+1
+调度器设置时区：GMT+3
+
+调度器会把调度模式和系统时间进行比较，然后把GTM+1时区下的10:00转换到GTM+3，这意味着10：00变成了12：00，这个结果会被运用到调度器中去执行任务。所以，在给定的设置下，任务会在模式“ 0 12 * * * ”中执行，而不是模式“ 0 10 * * * ” 。
+
+[回到索引](#index)
+- - -
+<span id="12守护线程-daemon-threads"></span>
+### 12、守护线程 Daemon threads
+JVM只有在当前运行线程全部都是守护线程的时候才会退出，cron4j调度器可以被配置为只生产守护线程。为了控制这个特性，你需要调用`Scheduler.setDaemon(boolean)`方法，这个方法必须在调度器被开启之前调用，方法的默认值是false，你可以调用`Scheduler.isDaemon()`方法来检测当前调度器生成的线程是否是守护线程。
+
+<br>
+
+> *译者文外补充：这小节的意思是，如果你启动了一个调度器，在它执行到特定状态的时候让它自己关闭（注意是关闭调度器）的话，在默认的情况下它是不会退出程序的，不信你可以写一个简单的demo来测试一下。*
+
+[回到索引](#index)
+- - -
+<span id="13预报器-predictor"></span>
+### 13、预报器 Predictor
+`it.sauronsoftware.cron4j.Predictor`类可以预测你的调度模式什么时候会被匹配到。
+
+假如你想知道调度器在使用模式“ 0 3 jan-jun,sep-dec mon-fri ”的情况下什么时候会执行任务，你可以使用预报器对象去预测接下来n次任务的执行时间：
+```
+String pattern = "0 3 * jan-jun,sep-dec mon-fri";
+Predictor p = new Predictor(pattern);
+for (int i = 0; i < n; i++) {
+	System.out.println(p.nextMatchingDate());
+}
+```
+
+<br>
+
+> *译者文外补充：当n等于5的时候结果如下：*
+> ```
+> Fri Sep 01 03:00:00 CST 2017
+> Mon Sep 04 03:00:00 CST 2017
+> Tue Sep 05 03:00:00 CST 2017
+> Wed Sep 06 03:00:00 CST 2017
+> Thu Sep 07 03:00:00 CST 2017
+>```
+
+[回到索引](#index)
+- - -
+<span id="14cron解析器"></span>
+### 14、Cron解析器
+
+`it.sauronsoftware.cron4j.CronParser`类可以被用来解类crontab形式的文件以及字符流。
+
+如果你想根据类crontab形式的文件去安排一系列的任务，你可以不需要使用Cron解析器，你只需要调用`Scheduler.scheduleFile(File)`方法把文件添加到调度器里面就可以了。
+
+如果`Scheduler.scheduleFile(File)`方法还不能够满足你的需求的话，你可以考虑使用Cron解析器去安排任务。
+
+举个栗子，如果你想从远程源获取任务安排表，可是远程源并不支持`java.io.File`对象去操作的话（比如远程服务器上的文档、数据库中的数据设置等等），这时候你可以自己实现`it.sauronsoftware.cron4j.TaskCollector`类，好让Cron解析器更方便的去解析任何类crontab内容。
+
+你可以解析整个文件或者整个流，也可以只解析其中一句。
+
+每一行可以是空行、注释、或者是可调度行。
+
+没有任何字符或者仅仅包含空格符的行会被认为是空行。
+
+第一个字符为非空格符而且是一个‘#’符的行会被认为是注释。
+
+解析器会忽略空行和注释行。
+
+任何其他类别的行都会被解析为可调度行。
+
+一个有效的可调度行应该遵循以下结构（注意四个部分之间有空格）：
+> scheduling-pattern [options] command [args]
+>
+> 调度模式 [选项] 命令 [提供的参数]
+
+**scheduling-pattern**：必须是根据`it.sauronsoftware.cron4j.SchedulingPattern`类所给定义的有效的调度模式。
+
+**options**：是一个可选选项的列表，它告诉cron4j该什么样的环境来执行任务。稍后会作详细的说明。
+
+**command**：是有效的系统命令，比如一个可执行的调用。
+
+**args**：是提供给系统命令的参数列表。
+
+在调度模式之后，其他的部分需要使用空格符或者双引号来界定。
+
+使用双引号的好处是你可以使用以下转义字符：
+```
+\" - quotation mark
+\\ - back slash
+\/ - slash
+\b - back space
+\f - form feed
+\n - new line
+\r - carriage return
+\t - horizontal tab
+\ufour-hex-digits - the character at the given Unicode index
+```
+
+<br>
+
+对于**options**部分的子集可以包含一个或多个以下的对象：
+> IN：一个文件路径，重定向命令的标准输入通道到指定的文件位置。
+> OUT：一个文件路径，重定向命令的标准输出通道到指定的文件位置。
+> ERR：一个文件路径，重定向命令的标准报错输出通道到指定的文件位置。
+> ENV：名值对（name=value），在命令作用域中定义环境变量。
+> DIR：一个目录位置，设置命令的工作目录，这要求你的JVM环境至少是1.3。
+
+你还可以安排一个在解析器的类加载器作用域内的Java类的方法调用。这个方法必须是静态方法并且它的参数列表只能是唯一的一个String数组，为了调用这个方法，你的调度行结构需要这么写：
+> scheduling-pattern java:className#methodName [args]
+方法名部分可以被省略，这时解析器会调用类中的main方法（如果存在的话）。
+
+你需要注意的是，静态方法会在和调度器一样的JVM环境中执行，并不会产生任何的外部程序！因此**options**部分不可选！
+
+非法的调度行将会被抛弃，不会阻断解析过程，但会在程序的标准错误输出通道中发送一条错误信息。
+
+以下是一些合法的调度行栗子：
+```
+0 5 * * * sol.exe
+0,30 * * * * OUT:C:\ping.txt ping 10.9.43.55
+0,30 4 * * * "OUT:C:\Documents and Settings\Carlo\ping.txt" ping 10.9.43.55
+0 3 * * * ENV:JAVA_HOME=C:\jdks\1.4.2_15 DIR:C:\myproject OUT:C:\myproject\build.log C:\myproject\build.bat "Nightly Build"
+0 4 * * * java:mypackage.MyClass#startApplication myOption1 myOption2
+```
+[回到索引](#index)
+- - -
+<br>
+<br>
+<br>
+<br>
 # 部分实践演示代码
 <span id="1collector-exp"></span>
 ### 1、Collector exp
