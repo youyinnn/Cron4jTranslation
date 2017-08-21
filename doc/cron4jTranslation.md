@@ -24,7 +24,7 @@
 > 1. [创建自定义的任务 Task](#6创建自定义的任务-task)
 > 1. [创建自定义的收集器 Collector](#7创建自定义的收集器-Collector)
 > 1. [创建自定义的监听器来监控你的调度器](#8创建自定义的监听器来监控你的调度器)
-> 1. [执行器Executors](#9)
+> 1. [执行器 Executors](#9执行器-executors)
 > 1. [手动启动任务](#10)
 > 1. [在指定时区下运行](#11)
 > 1. [守护线程 Daemon threads](#12)
@@ -354,6 +354,41 @@ cron4j调度器支持注册一个或多个`it.sauronsoftware.cron4j.TaskCollecto
 - - -
 <span id="8创建自定义的监听器来监控你的调度器"></span>
 ### 8、创建自定义的监听器来监控你的调度器
+cron4j提供了`it.sauronsoftware,cron4j.SchedulerListener`类，我们可以使用它的API来对调度器的事件进行监听。
+
+调度监听器需要实现以下方法：
+```
+taskLaunching(TaskExecutor)
+这个方法会在每个调度任务启动的时候被调度器调用
+
+taskSucceeded(TaskExecutor)
+这个方法会在每个任务成功地执行完毕的时候被调用
+
+taskFailed(TaskExecutor, Throwable)
+这个方法会在每个任务执行失败的时候被调用
+```
+你可以从“[执行器Executors](#9)”小节中了解到更多的信息。
+
+当你准备好一个调度监听器（SchedulerListener）的时候，你可以使用调度器的`addSchedulerListener(SchedulerListener)`方法将这个监听器注册到该调度器中。
+
+你可以使用`removeSchedulerListener(SchedulerListener)`方法移除已经注册的监听器。
+
+你可以使用`getSchedulerListeners()`方法获取到所有在本调度器注册的监听器。
+
+调度监听器可以在任何时候被注册或者移除，即使是在调度器正在运行的时候。
+
+[回到索引](#index)
+- - -
+<span id="9执行器-executors"></span>
+### 9、执行器 Executors
+
+
+
+
+
+
+
+
 
 
 
