@@ -12,6 +12,7 @@
 9. Crontab/Cron 定时任务工具
 10. status tracking 状态跟踪
 11. executor 执行器
+12. collector 收集器
 - - -
 <span id="index"></span>
 ## Index
@@ -20,9 +21,9 @@
 > 1. [如何调度 schedule、重新调度 reschedule、脱离调度 deschedule一个任务](#3如何调度-schedule重新调度-reschedule脱离调度-deschedule一个任务task)
 > 1. [如何调度系统程序](#4如何调度系统程序)
 > 1. [如何从调度配置文件中调度程序](#5如何从调度配置文件中调度程序)
-> 1. [创建你的任务 Task](#6创建你的任务-task)
-> 1. [创建你的收集器 Collector](#7)
-> 1. [创建你的调度器的监听器](#8)
+> 1. [创建自定义的任务 Task](#6创建自定义的任务-task)
+> 1. [创建自定义的收集器 Collector](#7创建自定义的收集器-Collector)
+> 1. [创建自定义的监听器来监控你的调度器](#8创建自定义的监听器来监控你的调度器)
 > 1. [执行器Executors](#9)
 > 1. [手动启动任务](#10)
 > 1. [在指定时区下运行](#11)
@@ -187,7 +188,7 @@ cron4j允许你使用“|”符号连接多个调度模式组成一个调度模�
 ##### （1）调度
 创建Task的最简单最常用的方法就是实现`java.lang.Runnable`接口，任务创建好的时候，它可以被`it.sauronsoftware.cron4j.Scheduler.schedule(String, Runnable)`方法安排进调度器中，如果调度模式有格式异常，将会抛出`it.sauronsoftware.cron4j.InvalidPatternException`异常。
 
-创建Task的另一种方法就是继承抽象方法`it.sauronsoftware.cron4j.Task`，这种方式比上一种方式更加强大，它可以使开发者访问一些cron4j提供的特性。你可以在“[建立你的任务 Task](#6)”小节中了解到更多相关用法。Task的实例可以被`schedule(String, Task)`方法和`schedule(SchedulingPattern, Task)`方法安排进调度器中。
+创建Task的另一种方法就是继承抽象方法`it.sauronsoftware.cron4j.Task`，这种方式比上一种方式更加强大，它可以使开发者访问一些cron4j提供的特性。你可以在“[建立自定义的任务 Task](#6)”小节中了解到更多相关用法。Task的实例可以被`schedule(String, Task)`方法和`schedule(SchedulingPattern, Task)`方法安排进调度器中。
 
 ##### （2）重新调度/脱离调度
 在调度器对象的调度方法`schedule`会返回一个ID值（String类型）用来识别和检索已经安排过的操作。
@@ -268,14 +269,14 @@ cron4j调度器可以从调度配置文件中调度一系列的程序流程
 
 已经调度过的调度配置文件可以使用`getScheduledFiles()`方法来检索到。
 
-已经注册过的调度配置文件会每分钟都被解析一次，调度器会根据调度配置文件去运行当前系统下所有匹配的、使用‘scheduling pattern（调度模式）’来正确声明的程序。
+已经注册过的调度配置文件会每分钟都被解析一次，调度器会根据调度配置文件去运行所有使用‘scheduling pattern（调度模式）’来正确声明的、匹配当前系统时间的程序。
 
 cron4j的调度配置文件的声明规则可以从“[Cron解析器](#14)”小节中了解到。
 
 [回到索引](#index)
 - - -
-<span id="6创建你的任务-task"></span>
-### 6、创建你的任务 Task
+<span id="6创建自定义的任务-task"></span>
+### 6、创建自定义的任务 Task
 
 一个`java.lang.Runnable`对象是一个简单的Task，但是为了获得对整个任务的控制权你还需要继承`it.sauronsoftware,cron4j.Task`类（注意这是一个抽象类）。
 
@@ -325,3 +326,27 @@ execute(TaskExecutionContext)方法提供了一个`it.sauronsoftware.cron4j.Task
 一个自定义的任务可以被任务收集器（task collector）所立即调度、运行、或者返回。
 
 *译者文外补充：可以查看Task类的源码，不难发现，上述所要重载的方法在源码中也仅仅只是返回false值，也即默认是关闭这些功能的，我们只有重载为true才能开启和使用它们。*
+
+[回到索引](#index)
+- - -
+<span id="7创建自定义的收集器-Collector"></span>
+### 7、创建自定义的收集器 Collector
+
+通过任务收集器提供的API，你可以在调度器里面创建和插入你自己的任务源（task source）。
+
+cron4j调度器支持注册一个或多个`it.sauronsoftware.cron4j.TaskCollector`实例，你只需要使用`addTaskCollector(TaskCollector)`方法即可。
+
+被注册的收集器可以被调度器使用`getTaskCollectors`方法索引到，之前的收集器可以使用`removeTaskCollector(TaskCollector)`方法从调度器中移除。
+
+收集器可以在任意的时间被添加（注册）、查询（索引）、移除，即使是在调度器正在运行的状态下也可以。
+
+每一个被注册过的收集器每分钟都会被调度器去索引一次，调度器会调用收集器的`collector.getTasks()`方法。这个实现方法会返回一个`it.sauronsoftware,cron4j.TaskTable`实例。
+
+每一个任务表都包含了本收集器中所有的任务实例和该任务对应的调度模式实例。一旦该表被检索到，调度器就会检查被记录（原文使用reported）到的对象，然后执行所有使用‘scheduling pattern（调度模式）’来正确声明的、匹配当前系统时间的任务。
+
+一个自定义的收集器可以配合外部任务源来约束调度器的行为，比如数据库、或者xml文件，这些同样支持在运行时更改和管理的源。
+
+[回到索引](#index)
+- - -
+<span id="8创建自定义的监听器来监控你的调度器"></span>
+### 8、创建自定义的监听器来监控你的调度器
