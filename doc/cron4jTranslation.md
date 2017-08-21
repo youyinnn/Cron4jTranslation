@@ -11,7 +11,7 @@
 8. Predictor 先知（故意翻译为这个中二的名字哈哈）、预报器（这才是常规翻译）
 9. Crontab/Cron 定时任务工具
 10. status tracking 状态跟踪
-11. executor 执行者
+11. executor 执行器
 - - -
 <span id="index"></span>
 ## Index
@@ -23,7 +23,7 @@
 > 1. [创建你的任务 Task](#6创建你的任务-task)
 > 1. [创建你的收集器 Collector](#7)
 > 1. [创建你的调度器的监听器](#8)
-> 1. [执行者Executors](#9)
+> 1. [执行器Executors](#9)
 > 1. [手动启动任务](#10)
 > 1. [在指定时区下运行](#11)
 > 1. [守护线程 Daemon threads](#12)
@@ -288,23 +288,40 @@ execute(TaskExecutionContext)方法提供了一个`it.sauronsoftware.cron4j.Task
 你可以用这个对象做这些事情来操作当前任务：
 
 * status tracking 状态跟踪
-> 任务可以和它的执行者进行通信，可以通过文本描述来向外通知它的internal state（内部状态）
+> 任务可以和它的执行器进行通信，可以通过文本描述来向外通知它的internal state（内部状态）
 >
-> 如果你对在任务中支持状态跟踪这个功能比较感兴趣的话，你可以重载`supportsStatusTracking()`方法，这个方法需要一个true为返回值。
+> 如果你想要你的任务支持这个功能的话，你可以重载`supportsStatusTracking()`方法，这个方法仅需要实现一个true为返回值就可以表示开启该功能。
 >
-> 当你重载过这个方法之后，在`execute(TaskExecutionContext)`方法里面就可以调用`context.setStatusMessage(String)`方法，这会给该任务的执行者发一条状态消息。这个状态消息，通过执行者，可以被外部用户索引到（具体看“[执行者Executors](#9)”小节）。
+> 当你重载过这个方法之后，在`execute(TaskExecutionContext)`方法里面就可以调用`context.setStatusMessage(String)`方法，这会给该任务的执行器发一条状态消息。这个状态消息，通过执行器，可以被外部用户索引到（具体看“[执行器Executors](#9)”小节）。
 >
 
 * completeness tracking 完成度跟踪
-> 任务可以和它的执行者进行通信，可以通过数字值来向外通知它的completeness level（完成度），
+> 任务可以和它的执行器进行通信，可以通过数字值来向外通知它的completeness level（完成度），
 >
-> 如果你对在任务中支持完成度跟踪这个功能比较感兴趣的话，你可以重载`supportsCompletenessTracking()`方法，这个方法需要一个true为返回值。
+> 如果你想要你的任务支持这个功能的话，你可以重载`supportsCompletenessTracking()`方法，这个方法仅需要实现一个true为返回值就可以表示开启该功能。
 >
-> 当你重载过这个方法之后，在`execute(TaskExecutionContext)`方法里面就可以调用`context.setCompleteness(double)`方法，这个方法需要传递一个0~1之间的double值，这会给该任务的执行者发一个完成度值。这个完成度值，通过执行者，可以被外部用户索引到（具体看“[执行者Executors](#9)”小节）。
+> 当你重载过这个方法之后，在`execute(TaskExecutionContext)`方法里面就可以调用`context.setCompleteness(double)`方法，这个方法需要传递一个0~1之间的double值，这会给该任务的执行器发一个完成度值。这个完成度值，通过执行器，可以被外部用户索引到（具体看“[执行器Executors](#9)”小节）。
 
 * paused 被暂停
-> 任务可以被随意的暂停。
+> 任务可以根据情况而暂停。
 >
-> 如果你对可以在任务中支持暂停和恢复任务的功能比较感兴趣的话，你可以重写`canBePaused()`方法，这个方法需要一个true作为返回值。
+> 如果你想要你的任务支持这个功能的话，你可以重写`canBePaused()`方法，这个方法仅需要实现一个true为返回值就可以表示开启该功能。
 >
-> 当你重载过这个方法之后，你需要定期的调用`context.pauseIfRequested()`方法，这会暂停任务的执行，直到被外部用户恢复或者终止当前任务。
+> 当你重载过这个方法之后，你需要定期地（原文此处为：you have to periodically call the...）调用`context.pauseIfRequested()`方法，这会暂停任务的执行，直到被外部用户恢复或者终止当前任务。
+
+* stopped 被终止
+> 任务可以根据情况而终止。
+>
+> 如果你想要你的任务支持这个功能的话，你可以重载`canBeStopped()`方法，这个方法仅需要实现一个true为返回值就可以表示开启该功能。
+>
+> 当你重载过这个方法之后，你需要定期地（...）调用`context.isStopped()`方法，当被外部用户命令终止的时候，这会返回一个true值（具体看“[执行器Executors](#9)”小节）。这时候你有义务处理好这个任务在执行时所反馈出来的事件结果，好让它在正在运行的状态下平稳地（原文：gently）结束。
+
+* 索引调度器
+> 通过context对象，你可以通过`getScheduler()`索引到调度本身调度器。
+
+* 索引执行器
+> 通过context对象，你可以通过`getTaskExecutor()`索引到调度本身调度器。
+
+一个自定义的任务可以被任务收集器（task collector）所立即调度、运行、或者返回。
+
+*译者文外补充：可以查看Task类的源码，不难发现，上述所要重载的方法在源码中也仅仅只是返回false值，也即默认是关闭这些功能的，我们只有重载为true才能开启和使用它们。*
