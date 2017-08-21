@@ -618,6 +618,31 @@ for (int i = 0; i < n; i++) {
 0 3 * * * ENV:JAVA_HOME=C:\jdks\1.4.2_15 DIR:C:\myproject OUT:C:\myproject\build.log C:\myproject\build.bat "Nightly Build"
 0 4 * * * java:mypackage.MyClass#startApplication myOption1 myOption2
 ```
+把上述文档作txt保存之后，可以在程序中这样调用：
+```
+public class Main {
+
+	public static void main(String[] args) {
+		// Declares the file.
+		File file = new File("cron4jtab.txt");
+		// Creates the scheduler.
+		Scheduler scheduler = new Scheduler();
+		// Schedules the file.
+		scheduler.scheduleFile(file);
+		// Starts the scheduler.
+		scheduler.start();
+		// Stays alive for five minutes.
+		try {
+			Thread.sleep(5L * 60L * 1000L);
+		} catch (InterruptedException e) {
+			;
+		}
+		// Stops the scheduler.
+		scheduler.stop();
+	}
+
+}
+```
 [回到索引](#index)
 - - -
 <br>
