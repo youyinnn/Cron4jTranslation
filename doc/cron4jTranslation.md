@@ -22,7 +22,7 @@
 > 1. [如何调度系统程序](#4如何调度系统程序)
 > 1. [如何从调度配置文件中调度程序](#5如何从调度配置文件中调度程序)
 > 1. [创建自定义的任务 Task](#6创建自定义的任务-task)
-> 1. [创建自定义的收集器 Collector](#7创建自定义的收集器-Collector)
+> 1. [创建自定义的收集器 Collector](#7创建自定义的收集器-collector)
 > 1. [创建自定义的监听器来监控你的调度器](#8创建自定义的监听器来监控你的调度器)
 > 1. [执行器 Executors](#9执行器-executors)
 > 1. [手动启动任务](#10手动启动任务)
@@ -335,7 +335,7 @@ execute(TaskExecutionContext)方法提供了一个`it.sauronsoftware.cron4j.Task
 
 [回到索引](#index)
 - - -
-<span id="7创建自定义的收集器-Collector"></span>
+<span id="7创建自定义的收集器-collector"></span>
 ### 7、创建自定义的收集器 Collector
 
 通过任务收集器提供的API，你可以在调度器里面创建和插入你自己的任务源（task source）。
@@ -645,13 +645,18 @@ public class Main {
 ```
 [回到索引](#index)
 - - -
+-
 <br>
 <br>
 <br>
 <br>
+
 # 部分实践演示代码
+
 <span id="1collector-exp"></span>
+
 ### 1、Collector exp
+
 ```
 public class CollectorExp {
 
@@ -729,5 +734,5 @@ class MyTask extends Task{
     }
 }
 ```
-[返回Collector小节](#7创建自定义的收集器-Collector)
+[返回Collector小节](#7创建自定义的收集器-collector)
 - - -
